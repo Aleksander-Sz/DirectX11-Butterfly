@@ -87,13 +87,14 @@ ButterflyDemo::ButterflyDemo(HINSTANCE hInstance)
 	m_box = Mesh::ShadedBox(m_device);
 
 	m_pentagon = Mesh::Pentagon(m_device);
+	m_triangle = Mesh::Triangle(m_device);
 	m_wing = Mesh::DoubleRect(m_device, 2.0f);
 	CreateMoebuisStrip();
 
 	m_bilboard = Mesh::Billboard(m_device, 2.0f);
 
 	//Model matrices
-	CreateDodecahadronMtx();
+	PrepareShapeForRendering();
 
 	SetShaders();
 	ID3D11Buffer* vsb[] = { m_cbWorld.get(),  m_cbView.get(), m_cbProj.get() };
@@ -139,7 +140,7 @@ void ButterflyDemo::CreateRenderStates()
 void ButterflyDemo::CreateDodecahadronMtx()
 //Compute dodecahedronMtx and mirrorMtx
 {
-	//DONE : 1.01. calculate m_dodecahedronMtx matrices
+    //DONE : 1.01. calculate m_dodecahedronMtx matrices
 	float pi = 3.14159265359f;
 	float r = sqrt(3.0f/8.0f+sqrt(5.0f)/8.0f);
 	float h = 1.0f + 2.0f * r;
@@ -166,21 +167,93 @@ void ButterflyDemo::CreateDodecahadronMtx()
 	//TODO : 1.12. calculate m_mirrorMtx matrices
 }
 
-XMFLOAT3 ButterflyDemo::MoebiusStripPos(float t, float s)
-//TODO : 1.04. Compute the position of point on the Moebius strip for parameters t and s
+void ButterflyDemo::CreateIcosahedronMtx()
+//Compute dodecahedronMtx and mirrorMtx
 {
-	return {};
+    float pi = 3.14159265359f;
+	float r = (3.0f + sqrt(5.0f)) / 4.0f;//2.0f / sqrt(3.0f) / 4.0f * sqrt(10.0f + 2.0f * sqrt(5.0f));
+	float a = acos(-sqrt(5.0f) / 3.0f);
+	float b = -acos(sqrt(1.0f / 3.0f + 2.0f * sqrt(5.0f) / 15.0f));
+	// M[0]
+	XMMATRIX matrix[20];
+	matrix[0] = XMMatrixRotationX(pi / 2.0f) * XMMatrixTranslation(0.0f, -r, 0.0f) * XMMatrixRotationZ(-pi + b);
+	XMStoreFloat4x4(&(m_dodecahedronMtx[0]), matrix[0]);
+	// M[1..4]
+	for (int i = 1; i < 5; i++)
+	{
+		matrix[i] = matrix[i-1] * XMMatrixRotationY(2.0f * pi / 5.0f);
+	}
+	// M[5]
+	matrix[5] = XMMatrixRotationX(pi / 2.0f) * XMMatrixRotationY(pi) * XMMatrixTranslation(0.0f, -r, 0.0f) * XMMatrixRotationZ(( - pi + a + b));
+	// M[6..9]
+	for (int i = 6; i < 10; i++)
+	{
+		matrix[i] = matrix[i - 1] * XMMatrixRotationY(2.0f * pi / 5.0f);
+	}
+	// M[10..19]
+	for (int i = 10; i < 20; i++)
+	{
+		matrix[i] = matrix[i - 10] * XMMatrixRotationZ(pi);
+	}
+	for (int i = 0; i < 20; i++)
+	{
+		XMStoreFloat4x4(&(m_dodecahedronMtx[i]), matrix[i]);
+	}
+}
+
+void ButterflyDemo::PrepareShapeForRendering(int shape)
+{
+	static int currentShape = -1;
+	// 1 - Tetrahedron
+	// 2 - Octahedron
+	// 3 - Hexahedron
+	// 4 - Icosahedron
+	// 5 - Dodecahedron
+	if (currentShape != shape)
+	{
+		switch (shape)
+		{
+		case 4:
+			CreateIcosahedronMtx();
+			break;
+		case 5:
+			CreateDodecahadronMtx();
+			break;
+		default:
+			return;
+		}
+		currentShape = shape;
+	}
+}
+
+XMFLOAT3 ButterflyDemo::MoebiusStripPos(float t, float s)
+//DONE : 1.04. Compute the position of point on the Moebius strip for parameters t and s
+{
+	const float MOEBIUS_R = 1.0f;
+	const float MOEBIUS_W = 0.1f;
+	const float x = cos(t) * (MOEBIUS_R + MOEBIUS_W * s * cos(0.5f * t));
+	const float y = sin(t) * (MOEBIUS_R + MOEBIUS_W * s * sin(0.5f * t));
+	const float z = MOEBIUS_W * s * sin(0.5f);
+	return { x, y, z };
 }
 
 XMVECTOR ButterflyDemo::MoebiusStripDs(float t, float s)
-//TODO : 1.05. Return the s-derivative of point on the Moebius strip for parameters t and s
+//DONE : 1.05. Return the s-derivative of point on the Moebius strip for parameters t and s
 {
-	return {};
+	const float MOEBIUS_R = 1.0f;
+	const float MOEBIUS_W = 0.1f;
+	const float x = -MOEBIUS_R * sin(t) - 0.5f * s * MOEBIUS_W * sin(0.5f * t) * cos(t) - MOEBIUS_W * s * cos(0.5f * t) * sin(t);
+	const float y =  MOEBIUS_R * cos(t) - 0.5f * s * MOEBIUS_W * sin(0.5f * t) * sin(t) + MOEBIUS_W * s * cos(0.5f * t) * cos(t);
+	const float z = MOEBIUS_W * s * sin(0.5f);
+	return { x, y, z };
 }
 
 XMVECTOR ButterflyDemo::MoebiusStripDt(float t, float s)
-//TODO : 1.06. Compute the t-derivative of point on the Moebius strip for parameters t and s
+//DONE : 1.06. Compute the t-derivative of point on the Moebius strip for parameters t and s
 {
+	const float x = cos(0.5f * t) * cos(t);
+	const float y = cos(0.5f * t) * sin(t);
+	const float z = sin(0.5f * t);
 	return {};
 }
 
@@ -298,14 +371,41 @@ void ButterflyDemo::DrawBox()
 void ButterflyDemo::DrawDodecahedron(bool colors)
 //Draw dodecahedron. If color is true, use render faces with corresponding colors. Otherwise render using white color
 {
-	//TODO : 1.02. Draw all dodecahedron sides with colors - ignore function parameter for now
+	PrepareShapeForRendering(5);
+	//DONE : 1.02. Draw all dodecahedron sides with colors - ignore function parameter for now
+	XMFLOAT3 colorList[12] = {
+		{253.0f, 198.0f, 137.0f}, {255.0f, 247.0f, 153.0f}, {196.0f, 223.0f, 155.0f}, {162.0f, 211.0f, 156.0f},
+		{130.0f, 202.0f, 156.0f}, {122.0f, 204.0f, 200.0f}, {109.0f, 207.0f, 246.0f}, {125.0f, 167.0f, 216.0f},
+		{131.0f, 147.0f, 202.0f}, {135.0f, 129.0f, 189.0f}, {161.0f, 134.0f, 190.0f}, {244.0f, 154.0f, 193.0f} };
+	XMFLOAT4 color = { 1.0f,1.0f,1.0f,1.0f };
 	for (int i = 0; i < 12; i++)
 	{
+		if(colors)
+			color = XMFLOAT4(colorList[i].x / 255.0f, colorList[i].y / 255.0f, colorList[i].z / 255.0f, 1.0f);
 		UpdateBuffer(m_cbWorld, m_dodecahedronMtx[i]);
+		UpdateBuffer(m_cbSurfaceColor, color);
 		m_pentagon.Render(m_device.context());
 	}
-	//TODO : 1.14. Modify function so if colors parameter is set to false, all faces are drawn white instead
+	//DONE : 1.14. Modify function so if colors parameter is set to false, all faces are drawn white instead
 	
+}
+
+void ButterflyDemo::DrawIcosahedron(bool colors)
+{
+	PrepareShapeForRendering(4);
+	XMFLOAT3 colorList[12] = {
+		{253.0f, 198.0f, 137.0f}, {255.0f, 247.0f, 153.0f}, {196.0f, 223.0f, 155.0f}, {162.0f, 211.0f, 156.0f},
+		{130.0f, 202.0f, 156.0f}, {122.0f, 204.0f, 200.0f}, {109.0f, 207.0f, 246.0f}, {125.0f, 167.0f, 216.0f},
+		{131.0f, 147.0f, 202.0f}, {135.0f, 129.0f, 189.0f}, {161.0f, 134.0f, 190.0f}, {244.0f, 154.0f, 193.0f} };
+	XMFLOAT4 color = { 1.0f,1.0f,1.0f,1.0f };
+	for (int i = 0; i < 20; i++)
+	{
+		if (colors)
+			color = XMFLOAT4(colorList[i%10].x / 255.0f, colorList[i%10].y / 255.0f, colorList[i%10].z / 255.0f, 1.0f);
+		UpdateBuffer(m_cbWorld, m_dodecahedronMtx[i]);
+		UpdateBuffer(m_cbSurfaceColor, color);
+		m_triangle.Render(m_device.context());
+	}
 }
 
 void ButterflyDemo::DrawMoebiusStrip()
@@ -367,14 +467,22 @@ void ButterflyDemo::Render()
 	m_device.context()->OMSetBlendState(m_bsAlpha.get(), nullptr, BS_MASK);
 	Set1Light();
 	//TODO : 1.19. Comment the following line for now
-	DrawDodecahedron(true);
+	switch (m_shapeChosen)
+	{
+	case 4:
+		DrawIcosahedron(true);
+		break;
+	case 5:
+		DrawDodecahedron(true);
+		break;
+	}
 	//TODO : 1.27. Uncomment the above line again
 	m_device.context()->OMSetBlendState(nullptr, nullptr, BS_MASK);
 
 	//render the rest of the scene with all lights
 	Set3Lights();
 	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-	//TODO : 1.03. [optional] Comment the following line
+	//DONE : 1.03. [optional] Comment the following line
 	//DrawBox();
 	DrawMoebiusStrip();
 	DrawButterfly();

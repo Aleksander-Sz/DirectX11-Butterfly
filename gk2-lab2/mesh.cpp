@@ -181,6 +181,25 @@ std::vector<unsigned short> mini::Mesh::PentagonIdxs()
 	return { 0, 1, 2, 0, 2, 3, 0, 3, 4 };
 }
 
+std::vector<VertexPositionNormal> mini::Mesh::TriangleVerts(float radius)
+{
+	std::vector<VertexPositionNormal> vertices;
+	vertices.reserve(3);
+	float a = 0, da = XM_2PI / 3.0f;
+	for (int i = 0; i < 3; ++i, a -= da)
+	{
+		float sina, cosa;
+		XMScalarSinCos(&sina, &cosa, a);
+		vertices.push_back({ { cosa * radius, sina * radius, 0.0f }, { 0.0f, 0.0f, -1.0f } });
+	}
+	return vertices;
+}
+
+std::vector<unsigned short> mini::Mesh::TriangleIdxs()
+{
+	return { 0, 1, 2 };
+}
+
 std::vector<VertexPositionNormal> mini::Mesh::DoubleRectVerts(float width, float height)
 //TODO : 1.09. Create vertex list for the butterfly wing
 {

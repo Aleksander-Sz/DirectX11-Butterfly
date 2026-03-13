@@ -36,8 +36,8 @@ float4 main(PSInput i) : SV_TARGET
 
     float4 normal = normalize(i.nor);
     //return normal * 0.5f + 0.5f;
-    float3 ambient = float3(0.1f, 0.1f, 0.1f);
-    float3 diffuse = float3(0.5f, 0.2f, 0.8f);
+    float3 ambient = surfaceColor * 0.1f;
+    float3 diffuse = surfaceColor;
     float3 specular = float3(1.0f, 1.0f, 1.0f);
 	
     float4 lightPosition = float4(2.0f, 5.5f, 1.0f, 1.0f);

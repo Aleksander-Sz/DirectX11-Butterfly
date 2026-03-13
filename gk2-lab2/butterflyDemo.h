@@ -69,6 +69,9 @@ namespace mini::gk2
 		//Table of colors for dodecahedron's faces
 		static const DirectX::XMFLOAT4 COLORS[12];
 		void CreateDodecahadronMtx();
+		void CreateIcosahedronMtx();
+		void PrepareShapeForRendering(int shape = 5);
+		int m_shapeChosen = 5;
 		void CreateRenderStates();
 
 		//Static light positions
@@ -107,6 +110,8 @@ namespace mini::gk2
 		Mesh m_box;
 		//Pentagon (side of dodecahedron) mesh
 		Mesh m_pentagon;
+		//Triangle (side of icosahedron) mesh
+		Mesh m_triangle;
 		//Wing mesh
 		Mesh m_wing;
 		//Moebuis strip mesh
@@ -132,8 +137,8 @@ namespace mini::gk2
 
 #pragma region Matrices
 		DirectX::XMFLOAT4X4 m_projMtx;
-		DirectX::XMFLOAT4X4 m_dodecahedronMtx[12];
-		DirectX::XMFLOAT4X4 m_mirrorMtx[12];
+		DirectX::XMFLOAT4X4 m_dodecahedronMtx[20];
+		DirectX::XMFLOAT4X4 m_mirrorMtx[20];
 		DirectX::XMFLOAT4X4 m_wingMtx[2];
 #pragma endregion
 
@@ -149,6 +154,7 @@ namespace mini::gk2
 		void Set3Lights();
 		void DrawBox();
 		void DrawDodecahedron(bool colors);
+		void DrawIcosahedron(bool colors);
 		void DrawMoebiusStrip();
 		void DrawButterfly();
 		void DrawBillboards();

@@ -68,7 +68,13 @@ namespace mini
 
 		static std::vector<VertexPositionNormal> PentagonVerts(float radius = 1.0f);
 		static std::vector<unsigned short> PentagonIdxs();
-		static Mesh Pentagon(const DxDevice& device, float radius = 1.0f) { return SimpleTriMesh(device, PentagonVerts(), PentagonIdxs()); }
+		static Mesh Pentagon(const DxDevice& device, float radius = 1.0f) { return SimpleTriMesh(device, PentagonVerts(radius), PentagonIdxs()); }
+
+		//Triangle Mesh Creation
+
+		static std::vector<VertexPositionNormal> TriangleVerts(float radius = 1.0f);
+		static std::vector<unsigned short> TriangleIdxs();
+		static Mesh Triangle(const DxDevice& device, float radius = 1.0f) { return SimpleTriMesh(device, TriangleVerts(radius), TriangleIdxs()); }
 
 		//Double-sided Rectangle Mesh Creation
 
