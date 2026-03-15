@@ -77,6 +77,12 @@ namespace mini
 		static std::vector<unsigned short> TriangleIdxs();
 		static Mesh Triangle(const DxDevice& device, float radius = 1.0f) { return SimpleTriMesh(device, TriangleVerts(radius), TriangleIdxs()); }
 
+		//Square Mesh Creation
+
+		static std::vector<VertexPositionNormal> SquareVerts(float side = 1.0f);
+		static std::vector<unsigned short> SquareIdxs();
+		static Mesh Square(const DxDevice& device, float radius = 1.0f) { return SimpleTriMesh(device, SquareVerts(radius), SquareIdxs()); }
+
 		//Double-sided Rectangle Mesh Creation
 
 		static std::vector<VertexPositionNormal> DoubleRectVerts(float width, float height);

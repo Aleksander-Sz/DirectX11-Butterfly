@@ -210,6 +210,24 @@ std::vector<unsigned short> mini::Mesh::TriangleIdxs()
 	return { 0, 1, 2 };
 }
 
+std::vector<VertexPositionNormal> mini::Mesh::SquareVerts(float side)
+{
+	std::vector<VertexPositionNormal> vertices;
+	vertices.reserve(6);
+	vertices.push_back({ { -side, -side, 0.0f }, { 0.0f, 0.0f, -1.0f } });
+	vertices.push_back({ { -side,  side, 0.0f }, { 0.0f, 0.0f, -1.0f } });
+	vertices.push_back({ {  side,  side, 0.0f }, { 0.0f, 0.0f, -1.0f } });
+	vertices.push_back({ {  side,  side, 0.0f }, { 0.0f, 0.0f, -1.0f } });
+	vertices.push_back({ {  side, -side, 0.0f }, { 0.0f, 0.0f, -1.0f } });
+	vertices.push_back({ { -side, -side, 0.0f }, { 0.0f, 0.0f, -1.0f } });
+	return vertices;
+}
+
+std::vector<unsigned short> mini::Mesh::SquareIdxs()
+{
+	return { 0, 1, 2, 3, 4, 5 };
+}
+
 std::vector<VertexPositionNormal> mini::Mesh::DoubleRectVerts(float width, float height)
 //TODO : 1.09. Create vertex list for the butterfly wing
 {

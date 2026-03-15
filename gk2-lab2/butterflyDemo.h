@@ -70,10 +70,11 @@ namespace mini::gk2
 		static const DirectX::XMFLOAT4 COLORS[12];
 		void CreateTetrahedronMtx();
 		void CreateOctahedronMtx();
+		void CreateHexahedronMtx();
 		void CreateIcosahedronMtx();
 		void CreateDodecahedronMtx();
 		void PrepareShapeForRendering(int shape = 5);
-		int m_shapeChosen = 2;
+		int m_shapeChosen = 3;
 		void CreateRenderStates();
 
 		//Static light positions
@@ -112,8 +113,10 @@ namespace mini::gk2
 		Mesh m_box;
 		//Pentagon (side of dodecahedron) mesh
 		Mesh m_pentagon;
-		//Triangle (side of icosahedron) mesh
+		//Triangle (side of tetrahedron, octahedron and icosahedron) mesh
 		Mesh m_triangle;
+		//Square (side of hexahedron) mesh
+		Mesh m_square;
 		//Wing mesh
 		Mesh m_wing;
 		//Moebuis strip mesh
@@ -157,6 +160,7 @@ namespace mini::gk2
 		void DrawBox();
 		void DrawTetrahedron(bool colors);
 		void DrawOctahedron(bool colors);
+		void DrawHexahedron(bool colors);
 		void DrawDodecahedron(bool colors);
 		void DrawIcosahedron(bool colors);
 		void DrawMoebiusStrip();
