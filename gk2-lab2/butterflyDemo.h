@@ -68,10 +68,11 @@ namespace mini::gk2
 
 		//Table of colors for dodecahedron's faces
 		static const DirectX::XMFLOAT4 COLORS[12];
-		void CreateDodecahadronMtx();
+		void CreateTetrahedronMtx();
 		void CreateIcosahedronMtx();
+		void CreateDodecahedronMtx();
 		void PrepareShapeForRendering(int shape = 5);
-		int m_shapeChosen = 5;
+		int m_shapeChosen = 1;
 		void CreateRenderStates();
 
 		//Static light positions
@@ -153,6 +154,7 @@ namespace mini::gk2
 		void Set1Light();
 		void Set3Lights();
 		void DrawBox();
+		void DrawTetrahedron(bool colors);
 		void DrawDodecahedron(bool colors);
 		void DrawIcosahedron(bool colors);
 		void DrawMoebiusStrip();
