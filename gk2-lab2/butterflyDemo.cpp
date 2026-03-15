@@ -155,6 +155,27 @@ void ButterflyDemo::CreateTetrahedronMtx()
 	}
 }
 
+void ButterflyDemo::CreateOctahedronMtx()
+{
+	float r = sqrt(6.0f) / 6.0f * sqrt(3.0f);
+	float a = acos(1.0f / 3.0f);
+	XMMATRIX matrix[8];
+	matrix[0] = XMMatrixRotationX(XM_PI / 2.0f) * XMMatrixTranslation(0.0f, -r, 0.0f) * XMMatrixRotationZ((a-XM_PI)/ 2.0f);
+	for (int i = 1; i < 4; i++)
+	{
+		matrix[i] = matrix[i - 1] * XMMatrixRotationY(XM_PI / 2.0f);
+	}
+	for (int i = 4; i < 8; i++)
+	{
+		matrix[i] = matrix[i - 4] * XMMatrixRotationZ(XM_PI);
+	}
+	for (int i = 0; i < 8; i++)
+	{
+		matrix[i] = matrix[i] * XMMatrixScaling(1.5f, 1.5f, 1.5f);
+		XMStoreFloat4x4(&(m_dodecahedronMtx[i]), matrix[i]);
+	}
+}
+
 void ButterflyDemo::CreateDodecahedronMtx()
 //Compute dodecahedronMtx and mirrorMtx
 {
@@ -233,6 +254,9 @@ void ButterflyDemo::PrepareShapeForRendering(int shape)
 		{
 		case 1:
 			CreateTetrahedronMtx();
+			break;
+		case 2:
+			CreateOctahedronMtx();
 			break;
 		case 4:
 			CreateIcosahedronMtx();
@@ -432,6 +456,24 @@ void ButterflyDemo::DrawTetrahedron(bool colors)
 	}
 }
 
+void ButterflyDemo::DrawOctahedron(bool colors)
+{
+	PrepareShapeForRendering(2);
+	XMFLOAT3 colorList[12] = {
+		{253.0f, 198.0f, 137.0f}, {255.0f, 247.0f, 153.0f}, {196.0f, 223.0f, 155.0f}, {162.0f, 211.0f, 156.0f},
+		{130.0f, 202.0f, 156.0f}, {122.0f, 204.0f, 200.0f}, {109.0f, 207.0f, 246.0f}, {125.0f, 167.0f, 216.0f},
+		{131.0f, 147.0f, 202.0f}, {135.0f, 129.0f, 189.0f}, {161.0f, 134.0f, 190.0f}, {244.0f, 154.0f, 193.0f} };
+	XMFLOAT4 color = { 1.0f,1.0f,1.0f,1.0f };
+	for (int i = 0; i < 8; i++)
+	{
+		if (colors)
+			color = XMFLOAT4(colorList[i % 10].x / 255.0f, colorList[i % 10].y / 255.0f, colorList[i % 10].z / 255.0f, 1.0f);
+		UpdateBuffer(m_cbWorld, m_dodecahedronMtx[i]);
+		UpdateBuffer(m_cbSurfaceColor, color);
+		m_triangle.Render(m_device.context());
+	}
+}
+
 void ButterflyDemo::DrawDodecahedron(bool colors)
 //Draw dodecahedron. If color is true, use render faces with corresponding colors. Otherwise render using white color
 {
@@ -536,6 +578,9 @@ void ButterflyDemo::Render()
 	{
 	case 1:
 		DrawTetrahedron(true);
+		break;
+	case 2:
+		DrawOctahedron(true);
 		break;
 	case 4:
 		DrawIcosahedron(true);
