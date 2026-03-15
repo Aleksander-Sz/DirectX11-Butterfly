@@ -62,6 +62,16 @@ void Mesh::Render(const dx_ptr<ID3D11DeviceContext>& context) const
 	context->DrawIndexed(m_indexCount, 0, 0);
 }
 
+void Mesh::RenderTriangleStrip(const dx_ptr<ID3D11DeviceContext>& context) const
+{
+	if (!m_indexBuffer || m_vertexBuffers.empty())
+		return;
+	context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	context->IASetIndexBuffer(m_indexBuffer.get(), DXGI_FORMAT_R16_UINT, 0);
+	context->IASetVertexBuffers(0, m_vertexBuffers.size(), m_vertexBuffers.data(), m_strides.data(), m_offsets.data());
+	context->DrawIndexed(m_indexCount, 0, 0);
+}
+
 Mesh::~Mesh()
 {
 	Release();

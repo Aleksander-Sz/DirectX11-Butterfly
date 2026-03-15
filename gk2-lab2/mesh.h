@@ -36,6 +36,7 @@ namespace mini
 		Mesh& operator=(const Mesh& right) = delete;
 		Mesh& operator=(Mesh&& right) noexcept;
 		void Render(const dx_ptr<ID3D11DeviceContext>& context) const;
+		void RenderTriangleStrip(const dx_ptr<ID3D11DeviceContext>& context) const;
 
 		template<typename VertexType>
 		static Mesh SimpleTriMesh(const DxDevice& device, const std::vector<VertexType> verts, const std::vector<unsigned short> idxs)

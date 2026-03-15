@@ -232,35 +232,60 @@ XMFLOAT3 ButterflyDemo::MoebiusStripPos(float t, float s)
 	const float MOEBIUS_R = 1.0f;
 	const float MOEBIUS_W = 0.1f;
 	const float x = cos(t) * (MOEBIUS_R + MOEBIUS_W * s * cos(0.5f * t));
-	const float y = sin(t) * (MOEBIUS_R + MOEBIUS_W * s * sin(0.5f * t));
-	const float z = MOEBIUS_W * s * sin(0.5f);
+	const float y = sin(t) * (MOEBIUS_R + MOEBIUS_W * s * cos(0.5f * t));
+	const float z = MOEBIUS_W * s * sin(0.5f * t);
 	return { x, y, z };
 }
 
 XMVECTOR ButterflyDemo::MoebiusStripDs(float t, float s)
 //DONE : 1.05. Return the s-derivative of point on the Moebius strip for parameters t and s
 {
-	const float MOEBIUS_R = 1.0f;
-	const float MOEBIUS_W = 0.1f;
-	const float x = -MOEBIUS_R * sin(t) - 0.5f * s * MOEBIUS_W * sin(0.5f * t) * cos(t) - MOEBIUS_W * s * cos(0.5f * t) * sin(t);
-	const float y =  MOEBIUS_R * cos(t) - 0.5f * s * MOEBIUS_W * sin(0.5f * t) * sin(t) + MOEBIUS_W * s * cos(0.5f * t) * cos(t);
-	const float z = MOEBIUS_W * s * sin(0.5f);
-	return { x, y, z };
+	const float x = cos(0.5f * t) * cos(t);
+	const float y = cos(0.5f * t) * sin(t);
+	const float z = sin(0.5f * t);
+	return { x, y, z, 0.0f };
 }
 
 XMVECTOR ButterflyDemo::MoebiusStripDt(float t, float s)
 //DONE : 1.06. Compute the t-derivative of point on the Moebius strip for parameters t and s
 {
-	const float x = cos(0.5f * t) * cos(t);
-	const float y = cos(0.5f * t) * sin(t);
-	const float z = sin(0.5f * t);
-	return {};
+	const float MOEBIUS_R = 1.0f;
+	const float MOEBIUS_W = 0.1f;
+	const float x = -MOEBIUS_R * sin(t) - 0.5f * s * MOEBIUS_W * sin(0.5f * t) * cos(t) - MOEBIUS_W * s * cos(0.5f * t) * sin(t);
+	const float y =  MOEBIUS_R * cos(t) - 0.5f * s * MOEBIUS_W * sin(0.5f * t) * sin(t) + MOEBIUS_W * s * cos(0.5f * t) * cos(t);
+	const float z =  0.5f * MOEBIUS_W * cos(t);
+	return { x, y, z, 0.0f };
 }
 
 void ButterflyDemo::CreateMoebuisStrip()
 //TODO : 1.07. Create Moebius strip mesh
 {
-	
+	std::vector<VertexPositionNormal> vertices;
+	std::vector<unsigned short> indices;
+	float t = 0.0f;
+	for (int i = 0; i <= 256; i++)
+	{
+		for (float s = -1.0f; s < 2.0f; s+=2.0f)
+		{
+			t = XM_2PI / 128.0f  * (float)i;
+			XMVECTOR tangent = XMVector3Normalize(MoebiusStripDt(t, s));
+			XMVECTOR binormal = XMVector3Normalize(MoebiusStripDs(t, s));
+			XMVECTOR normal = XMVector3Normalize(XMVector3Cross(binormal, tangent));
+			XMFLOAT3 pos = MoebiusStripPos(t, s);
+			XMVECTOR position = XMLoadFloat3(&pos);
+			position = XMVectorScale(position, 0.5f);
+			//if (i > 128)
+			//	normal = XMVectorScale(normal, -1.0f);
+			//XMMATRIX matrix = { tangent, normal, binormal, position };
+			XMStoreFloat3(&pos, position);
+			XMFLOAT3 nor;
+			XMStoreFloat3(&nor, normal);
+			vertices.push_back(VertexPositionNormal(pos, nor));
+		}
+		indices.push_back(i * 2);
+		indices.push_back(i * 2 + 1);
+	}
+	m_moebius = Mesh::SimpleTriMesh(m_device, vertices, indices);
 }
 #pragma endregion
 
@@ -411,7 +436,8 @@ void ButterflyDemo::DrawIcosahedron(bool colors)
 void ButterflyDemo::DrawMoebiusStrip()
 //TODO : 1.08. Draw the Moebius strip mesh
 {
-	
+	UpdateBuffer(m_cbWorld, XMMatrixIdentity());
+	m_moebius.RenderTriangleStrip(m_device.context());
 }
 
 void ButterflyDemo::DrawButterfly()
