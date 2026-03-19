@@ -229,16 +229,21 @@ std::vector<unsigned short> mini::Mesh::SquareIdxs()
 }
 
 std::vector<VertexPositionNormal> mini::Mesh::DoubleRectVerts(float width, float height)
-//TODO : 1.09. Create vertex list for the butterfly wing
+//DONE : 1.09. Create vertex list for the butterfly wing
 {
-	return { };
+	return {
+		{ { -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { +1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { +1.0f, +1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { -1.0f, +1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+	};
 }
 
 std::vector<unsigned short> mini::Mesh::DoubleRectIdxs()
 //
-// 1.09. Create index list for the butterfly wing
+//DONE 1.09. Create index list for the butterfly wing
 {
-	return {  };
+	return { 0, 1, 3, 1, 2, 3, 3, 2, 1, 3, 1, 0 };
 }
 
 std::vector<DirectX::XMFLOAT3> mini::Mesh::BillboardVerts(float width, float height)

@@ -124,8 +124,9 @@ void ButterflyDemo::CreateRenderStates()
 	m_dssStencilTest = m_device.CreateDepthStencilState(dssDesc);
 
 	RasterizerDescription rsDesc;
-	//TODO : 1.13. Setup rasterizer state with ccw front faces
+	//DONE : 1.13. Setup rasterizer state with ccw front faces
 
+	rsDesc.CullMode = D3D11_CULL_FRONT;
 	m_rsCCW = m_device.CreateRasterizerState(rsDesc);
 
 	BlendDescription bsDesc;
@@ -225,7 +226,13 @@ void ButterflyDemo::CreateDodecahedronMtx()
 		matrix[i] = matrix[i-6] * XMMatrixRotationZ(pi);
 		XMStoreFloat4x4(&(m_dodecahedronMtx[i]), matrix[i]);
 	}
-	//TODO : 1.12. calculate m_mirrorMtx matrices
+	//DONE : 1.12. calculate m_mirrorMtx matrices
+	XMMATRIX inverseMatrix[12];
+	for (int i = 0; i < 12; i++)
+	{
+		XMMATRIX v = XMMatrixInverse(nullptr, matrix[i]) * matrix[i];
+		XMStoreFloat4x4(&(m_mirrorMtx[i]), v);
+	}
 }
 
 void ButterflyDemo::CreateIcosahedronMtx()
@@ -328,7 +335,7 @@ XMVECTOR ButterflyDemo::MoebiusStripDt(float t, float s)
 }
 
 void ButterflyDemo::CreateMoebuisStrip()
-//TODO : 1.07. Create Moebius strip mesh
+//DONE : 1.07. Create Moebius strip mesh
 {
 	std::vector<VertexPositionNormal> vertices;
 	std::vector<unsigned short> indices;
@@ -344,8 +351,6 @@ void ButterflyDemo::CreateMoebuisStrip()
 			XMFLOAT3 pos = MoebiusStripPos(t, s);
 			XMVECTOR position = XMLoadFloat3(&pos);
 			position = XMVectorScale(position, 0.5f);
-			//if (i > 128)
-			//	normal = XMVectorScale(normal, -1.0f);
 			//XMMATRIX matrix = { tangent, normal, binormal, position };
 			XMStoreFloat3(&pos, position);
 			XMFLOAT3 nor;
@@ -384,7 +389,7 @@ void ButterflyDemo::UpdateCameraCB(DirectX::XMFLOAT4X4 cameraMtx)
 }
 
 void ButterflyDemo::UpdateButterfly(float dtime)
-//TODO : 1.10. Compute the matrices for butterfly wings. Position on the strip is determined based on time
+//DONE : 1.10. Compute the matrices for butterfly wings. Position on the strip is determined based on time
 {
 	static float lap = 0.0f;
 	lap += dtime;
@@ -398,7 +403,21 @@ void ButterflyDemo::UpdateButterfly(float dtime)
 	if (a > WING_MAX_A)
 		a = 2 * WING_MAX_A - a;
 	//Write the rest of code here
-	
+	XMMATRIX translationMtx = XMMatrixTranslation(-1.0f, 0.0f, 0.0f);
+	for (int i = 0; i < 2; i++)
+	{
+		XMVECTOR tangent = XMVector3Normalize(MoebiusStripDt(t, 0.0f));
+		XMVECTOR binormal = XMVector3Normalize(MoebiusStripDs(t, 0.0f));
+		XMVECTOR normal = XMVector3Normalize(XMVector3Cross(binormal, tangent));
+		XMFLOAT3 pos = MoebiusStripPos(t, 0.0f);
+		XMVECTOR position = XMLoadFloat3(&pos);
+		position = XMVectorScale(position, 0.5f);
+		position = XMVectorSetW(position, 1.0f);
+		XMMATRIX matrix = { binormal, tangent, normal, position };
+		XMMATRIX rotationMtx = XMMatrixRotationY(XM_PI/2.0f) * XMMatrixRotationY(a*(float)(i*2-1));
+		matrix = translationMtx * XMMatrixScaling(WING_H/2.0f, WING_W/2.0f, 1.0f) * rotationMtx * XMMatrixTranslation(0.0f, 0.0f, 0.01f) * matrix;
+		XMStoreFloat4x4(&(m_wingMtx[i]), matrix);
+	}
 }
 #pragma endregion
 
@@ -558,16 +577,20 @@ void ButterflyDemo::DrawIcosahedron(bool colors)
 }
 
 void ButterflyDemo::DrawMoebiusStrip()
-//TODO : 1.08. Draw the Moebius strip mesh
+//DONE : 1.08. Draw the Moebius strip mesh
 {
 	UpdateBuffer(m_cbWorld, XMMatrixIdentity());
 	m_moebius.RenderTriangleStrip(m_device.context());
 }
 
 void ButterflyDemo::DrawButterfly()
-//TODO : 1.11. Draw the butterfly
+//DONE : 1.11. Draw the butterfly
 {
-	
+	for (int i = 0; i < 2; i++)
+	{
+		UpdateBuffer(m_cbWorld, m_wingMtx[i]);
+		m_wing.Render(m_device.context());
+	}
 }
 
 void ButterflyDemo::DrawBillboards()
@@ -591,10 +614,16 @@ void ButterflyDemo::DrawMirroredWorld(unsigned int i)
 	//TODO : 1.24. Setup depth stencil state for rendering mirrored world
 
 	//TODO : 1.15. Setup rasterizer state and view matrix for rendering the mirrored world
+	m_device.context()->RSSetState(m_rsCCW.get());
+	XMMATRIX matrix = XMLoadFloat4x4(&(m_mirrorMtx[i])) * m_camera.getViewMatrix();
+	XMFLOAT4X4 v;
+	XMStoreFloat4x4(&v, matrix);
+	UpdateBuffer(m_cbView, v);
 
 	//TODO : 1.16. Draw 3D objects of the mirrored scene - dodecahedron should be drawn with only one light and no colors and without blending
 
 	//TODO : 1.17. Restore rasterizer state to it's original value
+	m_device.context()->RSSetState(nullptr);
 
 	//TODO : 1.37. Setup depth stencil state for rendering mirrored billboards
 	
@@ -618,7 +647,7 @@ void ButterflyDemo::Render()
 	Set1Light();
 	static int frame = 0;
 	frame++;
-	if (frame % 200 == 0)
+	if (frame % 250 == 0)
 	{
 		m_shapeChosen++;
 		if (m_shapeChosen >= 6)
