@@ -113,13 +113,22 @@ void ButterflyDemo::CreateRenderStates()
 
 	//TODO : 1.20. Setup depth stencil state for writing to stencil buffer
 
+	//dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dssDesc.StencilWriteMask = 0xFF;
+	dssDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_REPLACE;
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NEVER;
+	dssDesc.StencilEnable = TRUE;
 	m_dssStencilWrite = m_device.CreateDepthStencilState(dssDesc);
 
 	//TODO : 1.36. Setup depth stencil state for stencil test for billboards
 
-	m_dssStencilTestNoDepthWrite = m_device.CreateDepthStencilState(dssDesc);
+	//m_dssStencilTestNoDepthWrite = m_device.CreateDepthStencilState(dssDesc);
 
 	//TODO : 1.21. Setup depth stencil state for stencil test for 3D objects
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dssDesc.StencilWriteMask = 0x00;
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	dssDesc.StencilEnable = true;
 
 	m_dssStencilTest = m_device.CreateDepthStencilState(dssDesc);
 
@@ -131,7 +140,17 @@ void ButterflyDemo::CreateRenderStates()
 
 	BlendDescription bsDesc;
 	//TODO : 1.26. Setup alpha blending state
+	bsDesc.RenderTarget[0].BlendEnable = TRUE;
 
+	bsDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	bsDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	bsDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	
+	bsDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	bsDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	bsDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+
+	bsDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	m_bsAlpha = m_device.CreateBlendState(bsDesc);
 
 	//TODO : 1.30. Setup additive blending state
@@ -230,7 +249,7 @@ void ButterflyDemo::CreateDodecahedronMtx()
 	XMMATRIX inverseMatrix[12];
 	for (int i = 0; i < 12; i++)
 	{
-		XMMATRIX v = XMMatrixInverse(nullptr, matrix[i]) * matrix[i];
+		XMMATRIX v = XMMatrixInverse(nullptr, matrix[i]) * XMMatrixScaling(1.0f, 1.0f, -1.0f) * matrix[i];
 		XMStoreFloat4x4(&(m_mirrorMtx[i]), v);
 	}
 }
@@ -608,10 +627,14 @@ void ButterflyDemo::DrawMirroredWorld(unsigned int i)
 //Draw the mirrored scene reflected in the i-th dodecahedron face
 {
 	//TODO : 1.22. Setup render state for writing to the stencil buffer
+	m_device.context()->OMSetDepthStencilState(m_dssStencilWrite.get(), i+1);
 
 	//TODO : 1.23. Draw the i-th face
+	UpdateBuffer(m_cbWorld, m_dodecahedronMtx[i]);
+	m_pentagon.Render(m_device.context());
 
 	//TODO : 1.24. Setup depth stencil state for rendering mirrored world
+	m_device.context()->OMSetDepthStencilState(m_dssStencilTest.get(), i+1);
 
 	//TODO : 1.15. Setup rasterizer state and view matrix for rendering the mirrored world
 	m_device.context()->RSSetState(m_rsCCW.get());
@@ -621,6 +644,9 @@ void ButterflyDemo::DrawMirroredWorld(unsigned int i)
 	UpdateBuffer(m_cbView, v);
 
 	//TODO : 1.16. Draw 3D objects of the mirrored scene - dodecahedron should be drawn with only one light and no colors and without blending
+	DrawDodecahedron(false);
+	DrawMoebiusStrip();
+	DrawButterfly();
 
 	//TODO : 1.17. Restore rasterizer state to it's original value
 	m_device.context()->RSSetState(nullptr);
@@ -630,8 +656,10 @@ void ButterflyDemo::DrawMirroredWorld(unsigned int i)
 	//TODO : 1.38. Draw mirrored billboards - they need to be drawn after restoring rasterizer state, but with mirrored view matrix
 
 	//TODO : 1.18. Restore view matrix to its original value
+	UpdateBuffer(m_cbView, m_camera.getViewMatrix());
 
 	//TODO : 1.25. Restore depth stencil state to it's original value
+	m_device.context()->OMSetDepthStencilState(nullptr, i);
 }
 
 void ButterflyDemo::Render()
@@ -643,7 +671,8 @@ void ButterflyDemo::Render()
 		DrawMirroredWorld(i);
 
 	//render dodecahedron with one light and alpha blending
-	m_device.context()->OMSetBlendState(m_bsAlpha.get(), nullptr, BS_MASK);
+	const float alpha[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	m_device.context()->OMSetBlendState(m_bsAlpha.get(), alpha, BS_MASK);
 	Set1Light();
 	static int frame = 0;
 	frame++;
@@ -654,7 +683,7 @@ void ButterflyDemo::Render()
 			m_shapeChosen = 1;
 	}
 	//TODO : 1.19. Comment the following line for now
-	switch (m_shapeChosen)
+	switch (m_shapeChosen=5)
 	{
 	case 1:
 		DrawTetrahedron(true);
@@ -673,7 +702,8 @@ void ButterflyDemo::Render()
 		break;
 	}
 	//TODO : 1.27. Uncomment the above line again
-	m_device.context()->OMSetBlendState(nullptr, nullptr, BS_MASK);
+	const float alpha2[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	m_device.context()->OMSetBlendState(nullptr, alpha2, BS_MASK);
 
 	//render the rest of the scene with all lights
 	Set3Lights();

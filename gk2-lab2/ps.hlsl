@@ -50,5 +50,5 @@ float4 main(PSInput i) : SV_TARGET
     float spec = pow(max(dot(i.viewVector, reflectDir), 0.0f), 50.0f);
     specular *= spec;
     //return i.viewVector * 0.5f + 0.5f;
-    return float4(min(ambient+diffuse+specular,1.0f), 1.0f);
+    return float4(min(ambient+diffuse+specular,1.0f), 0.2f);
 }
